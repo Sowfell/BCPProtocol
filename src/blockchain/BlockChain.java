@@ -3,10 +3,10 @@ import java.util.ArrayList;
 
 public class BlockChain {
 	private ArrayList<Block> blockChain = new ArrayList<>();
-	
+	private int difficulty = 5;
 	public BlockChain(){
 		System.out.println("------- BlockChain created -------\n"
-				+ "BlockChain current size: " + blockChain.size());
+				+ "BlockChain current size: " + blockChain.size() + "\n");
 	}
 	
 	public void addToChain(Block block) {
@@ -16,13 +16,15 @@ public class BlockChain {
 		if(blockChain.size() == 0) {
 			if(!block.previousHash.equals("0")) {
 				System.err.println("Invalid Block: Previous Hash is different to expected");
+				return;
 			}
 		}
+		block.mineBlock(difficulty);
 		blockChain.add(block);
 		block.index = blockChain.size();
 		System.out.println("\nBlock: " + block.index + " correctly added to BlockChain");
-		System.out.println("Currently blockchain size: " + blockChain.size());
-		return;
+		System.out.println("Currently blockchain size: " + blockChain.size() + "\n");
+		
 	}
 	
 	public static boolean isChainValid(ArrayList<Block> chainToValidate) {
@@ -46,7 +48,7 @@ public class BlockChain {
 				return false;
 			}
 		}
-		System.out.println("INTEGRITY TEST SUCCESFULLY COMPLETED");
+		System.out.println("INTEGRITY TEST SUCCESFULLY COMPLETED\n");
 		return true;
 	}
 	
@@ -72,7 +74,7 @@ public class BlockChain {
 		return this.blockChain;
 	}
 	
-	public Block getLastBlock() {
+	public Block getLastBlock() {    //AQUI Ó, RESGATA A BLOCKCHAIN
 		if(this.blockChain.isEmpty())
 			return null;
 		return this.blockChain.getLast();

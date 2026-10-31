@@ -25,11 +25,13 @@ public class Block implements Serializable {
 	
 	public void mineBlock(int difficulty) {
 		String target = new String(new char[difficulty]).replace('\0', '0'); //Create a string with difficulty zeros
+		if(hash.substring( 0, difficulty).equals(target))
+			return;
 		while(!hash.substring( 0, difficulty).equals(target)) { //While hash string[0 to difficulty - 1] is not equal to target
 		nonce ++;
 		hash = calculateHash();
 		}
-		System.out.println("Block Mined!!! : " + hash);
+		System.out.print("Block Mined: " + hash);
 		}
 	@Override
 	public String toString() {

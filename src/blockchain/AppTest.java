@@ -6,24 +6,6 @@ public class AppTest {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-//		int difficulty = 1;
-//		Block genesis = new Block("Hello", "0");
-//		genesis.mineBlock(difficulty);
-//
-//		Block block1 = new Block("Hello im the second block", genesis.hash);
-//		block1.mineBlock(difficulty);
-//
-//		Block block2 = new Block("Hello im the third block", block1.hash);
-//		block2.mineBlock(difficulty);
-//		
-//		System.out.println("LOG --------------------------");
-//		System.out.println("Total Blocks: " + Block.total);
-//		
-//		System.out.println("Index Block Genesis: " + genesis.index);
-//		System.out.println("Index Block 1: " + block1.index);
-//		System.out.println("Index Block 2: " + block2.index);
-
-		
 		BlockChain chain = new BlockChain();
 		ArrayList<Block> blockChain = chain.getBlockChain();
 		
@@ -46,7 +28,7 @@ public class AppTest {
 		System.out.println("Block 2 hash: " + blockTest2.hash);
 		System.out.println("Block 2 prev.hash: " + blockTest2.previousHash);
 	
-		System.out.println("\n------- INTEGRITY TEST -------");
+		System.out.println("\n------- INTEGRITY TEST -------\n");
 		BlockChain.isChainValid(blockChain);
 		
 		System.out.println(chain);
