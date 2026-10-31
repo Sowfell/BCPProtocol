@@ -38,14 +38,15 @@ public class PeerNode{
 			String[] ipDoor = address.split(":");
 			Socket socket = new Socket(ipDoor[0],Integer.parseInt(ipDoor[1]));
 			PeerConnection connection = new PeerConnection(socket,this);
+			String id = "V1.0-nodeA";
 			connection.start();
-			connection.send("Hello" + door);
+			connection.send(new NetworkMessage(MessageType.HELLO, id));
 		}catch(IOException e) {
 			System.out.println("Cannot connet on addres [" + address + "]");
 		}
 	}
 	
-	public void receive(PeerConnection origin, String message) {
+	public void receive(PeerConnection origin, NetworkMessage message) {
 		System.out.println("Door[" + door + "] received: " + message);
 	}
 	

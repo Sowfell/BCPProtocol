@@ -1,6 +1,6 @@
 package rede;
 
-public enum MessageTypes {
+public enum MessageType {
 	HELLO,
 	GET_PEERS,
 	PEERS_LIST,
