@@ -1,44 +1,41 @@
 package rede;
-import java.awt.Window.Type;
-import java.io.BufferedReader;
 import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 public class PeerConnection extends Thread {
 
 	private final Socket socket;
 	private final PeerNode node;
+	private final boolean sender;
 	
 	private final ObjectInputStream input;
 	private final ObjectOutputStream output;
 	
-	public PeerConnection(Socket socket, PeerNode node) throws IOException{
+	public PeerConnection(Socket socket, PeerNode node, boolean sender) throws IOException{
 		this.socket = socket;
 		this.node = node;
 		this.output = new ObjectOutputStream(socket.getOutputStream());
 		this.output.flush();
 		this.input = new ObjectInputStream(socket.getInputStream());
+		this.sender = sender;
 		
 	}
 	
 	@Override
 	public void run() {
 		try {
-			NetworkMessage message = (NetworkMessage)input.readObject();
-			node.receive(this, message);
-			
+			while(true) {
+				NetworkMessage message = (NetworkMessage)input.readObject();
+				node.recv(this, message);
+			}
 		}catch(EOFException e) {
-			
+			//other side just close de connection
 			
 		}catch(IOException | ClassNotFoundException e) {
-			System.out.println("Peer Lost!");
+			System.out.println("Connection lost!");
 			
 		}finally {
 			try{socket.close();}catch(Exception ignored) {};
@@ -57,51 +54,13 @@ public class PeerConnection extends Thread {
 		
 	}
 	
-	public synchronized void recv(NetworkMessage message) {
-		if(message == null)
-			return;
-		
-		FileInputStream fis = new FileInputStream("data.message");
-		ObjectInputStream ois = new ObjectInputStream(fis);
-		NetworkMessage clienteRecuperado = (NetworkMessage) ois.readObject();
-		ois.close();
-		
-		MessageType type = message.getType();
-		switch(type) {
-		case HELLO -> helloHandler(); //payload = String
-			
-		case GET_PEERS -> getPeersHandler();//payload = null
-			
-		case PEERS_LIST -> peerListHandler();//payload = List<String>
-			
-		case GET_BLOCKCHAIN -> getBlockchainHandler();//payload = null
-			
-		case BLOCKCHAIN_COPY -> blockchainCopyHandler();//payload = ArrayList<BlockChain>
-			
-		case REJECT -> rejectHandler();//payload = String
-			
-		default -> System.err.println("Unknown message type!");
-		}
-		
+	public boolean isSender() {
+		return this.sender;
 	}
 	
-	private void helloHandler() {
-		
+	public Socket getSocket() {
+		return this.socket;
 	}
-	private void getPeersHandler() {
-		
-	}
-	private void peerListHandler() {
-		
-	}
-	private void getBlockchainHandler() {
-		
-	}
-	private void blockchainCopyHandler() {
-		
-	}
-	private void rejectHandler() {
-		
-	}
+	
 	
 }

@@ -1,7 +1,10 @@
 package blockchain;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class BlockChain {
+public class BlockChain implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	private ArrayList<Block> blockChain = new ArrayList<>();
 	
 	public BlockChain(){
