@@ -10,21 +10,33 @@ public class BlockChain {
 	}
 	
 	public void addToChain(Block block) {
-		if(block==null) {
-			return;
-		}
-		if(blockChain.size() == 0) {
-			if(!block.previousHash.equals("0")) {
-				System.err.println("Invalid Block: Previous Hash is different to expected");
-				return;
-			}
-		}
-		block.mineBlock(difficulty);
-		blockChain.add(block);
-		block.index = blockChain.size();
-		System.out.println("\nBlock: " + block.index + " correctly added to BlockChain");
-		System.out.println("Currently blockchain size: " + blockChain.size() + "\n");
-		
+	    if (block == null) {
+	        return;
+	    }
+
+	    if (blockChain.isEmpty()) {
+	        if (!block.previousHash.equals("0")) {
+	            System.err.println("Invalid Block: genesis previousHash must be \"0\"");
+	            return;
+	        }
+	    } else {
+	        Block lastBlock = blockChain.get(blockChain.size() - 1);
+	        if (!block.previousHash.equals(lastBlock.hash)) {
+	            System.err.println("Invalid Block: previousHash does not match the last block's hash");
+	            return;
+	        }
+	    }
+
+	    if (!block.hash.equals(block.calculateHash())) {
+	        System.err.println("Invalid Block: hash does not match its content");
+	        return;
+	    }
+
+	    block.mineBlock(difficulty);
+	    blockChain.add(block);
+	    block.index = blockChain.size();
+	    System.out.println("\nBlock: " + block.index + " correctly added to BlockChain");
+	    System.out.println("Currently blockchain size: " + blockChain.size() + "\n");
 	}
 	
 	public static boolean isChainValid(ArrayList<Block> chainToValidate) {
@@ -34,6 +46,11 @@ public class BlockChain {
         }
 		Block currentBlock;
 		Block previousBlock;
+		Block genesisBlock = chainToValidate.get(0);
+		if(!genesisBlock.hash.equals(genesisBlock.calculateHash()))
+			return false;
+		if(!genesisBlock.previousHash.equals("0"))
+			return false;
 		
 		for(int i = 1; i<chainToValidate.size();i++) {
 			currentBlock = chainToValidate.get(i);
@@ -52,23 +69,34 @@ public class BlockChain {
 		return true;
 	}
 	
-	public boolean replaceChain(ArrayList<Block> receivedChain) {
-		if(!BlockChain.isChainValid(receivedChain)) {
-			System.err.println("INVALID BLOCKCHAIN RECEIVED");
-			return false;
-		}
-		
-		if(receivedChain.size()>this.blockChain.size()) {
-			this.blockChain = receivedChain;
-			System.out.println("BlockChain Updated by network. New size: " + blockChain.size());
-			return true;
-		}
-		else {
-			System.out.println("Blockchain received size is less than or equal to actual Blockchain");
-			return false;
-		}
-		
-	}
+	public ReplaceMessage replaceChain(ArrayList<Block> receivedChain) {
+        if (!BlockChain.isChainValid(receivedChain)) {
+            System.err.println("INVALID BLOCKCHAIN RECEIVED");
+            return ReplaceMessage.INVALIDCHAIN;
+        }
+
+        if (receivedChain.size() > this.blockChain.size()) {
+            this.blockChain = receivedChain;
+            System.out.println("BlockChain Updated by network. New size: " + blockChain.size());
+            return ReplaceMessage.CHAINSWITCH;
+        } else {
+            System.out.println("Blockchain received size is less than or equal to actual Blockchain");
+            return ReplaceMessage.DONTCHANGE;
+        }
+    }
+
+	public static String rejectReason(ReplaceMessage result) {
+        switch (result) {
+            case INVALIDCHAIN:
+                return "Cadeia inválida";
+            case DONTCHANGE:
+                return "Tamanho menor que a cadeia local";
+            case CHAINSWITCH:
+            default:
+                return null;
+        }
+    }
+
 	
 	public ArrayList<Block> getBlockChain(){
 		return this.blockChain;
