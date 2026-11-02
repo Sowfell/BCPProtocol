@@ -1,40 +1,66 @@
 package rede;
-import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class PeerConnection extends Thread {
 
 	private final Socket socket;
 	private final PeerNode node;
-	private final BufferedReader input;
-	private final PrintWriter output;
+	private final boolean sender;
 	
-	public PeerConnection(Socket socket, PeerNode node) throws IOException{
+	private final ObjectInputStream input;
+	private final ObjectOutputStream output;
+	
+	public PeerConnection(Socket socket, PeerNode node, boolean sender) throws IOException{
 		this.socket = socket;
 		this.node = node;
-		this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		this.output = new PrintWriter(socket.getOutputStream(), true);
+		this.output = new ObjectOutputStream(socket.getOutputStream());
+		this.output.flush();
+		this.input = new ObjectInputStream(socket.getInputStream());
+		this.sender = sender;
+		
 	}
 	
 	@Override
 	public void run() {
 		try {
-			String line;
-			while ((line = input.readLine()) != null) {
-				node.receive(this,line);
+			while(true) {
+				NetworkMessage message = (NetworkMessage)input.readObject();
+				node.recv(this, message);
 			}
-		}catch(IOException e) {
-			System.out.println("Connection error!");
+		}catch(EOFException e) {
+			//other side just close de connection
+			
+		}catch(IOException | ClassNotFoundException e) {
+			System.out.println("Connection lost!");
+			
 		}finally {
 			try{socket.close();}catch(Exception ignored) {};
 		}
 	}
 	
-	public synchronized void send(String message) {
-		output.println(message);
+	public synchronized void send(NetworkMessage message) {
+		
+		try {
+			output.writeObject(message);
+			output.reset();
+			output.flush();
+		}catch(IOException e){
+			try{socket.close();}catch(Exception ignored) {}
+		}
+		
 	}
+	
+	public boolean isSender() {
+		return this.sender;
+	}
+	
+	public Socket getSocket() {
+		return this.socket;
+	}
+	
 	
 }
