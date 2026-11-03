@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import blockchain.Block;
 import blockchain.BlockChain;
 import blockchain.ReplaceMessage;
 
@@ -25,6 +26,11 @@ public class PeerNode{
 	// Seed node estatico exigido pelo enunciado. Na apresentacao em varias
 	// maquinas, troque pelo IP da maquina semente na rede local.
 	private final static String DEFAULT_SEED = "127.0.0.1:8333";
+	// Mineracao: intervalo base + jitter aleatorio para reduzir forks.
+	// Podem ser ajustados por -Dbcp.mining.interval=... e -Dbcp.mining.jitter=...
+	private final static long MINING_INTERVAL_MS = Long.getLong("bcp.mining.interval", 10000L);
+	private final static long MINING_JITTER_MS = Long.getLong("bcp.mining.jitter", 5000L);
+	private final static long SYNC_DELAY_MS = Long.getLong("bcp.sync.delay", 2000L);
 	private final int door;
 
 	//Atributes
@@ -35,6 +41,7 @@ public class PeerNode{
 	private final List<String> seeds = new ArrayList<>();
 	private final CountDownLatch serverStarted = new CountDownLatch(1);
 	private volatile boolean serverReady = false;
+	private Miner miner;
 	private String id;
 
 	//get the door through console/main
@@ -86,14 +93,78 @@ public class PeerNode{
 
 		if (!serverReady) return;
 
+		// Todos os nos comecam com o mesmo bloco genesis deterministico.
+		ensureGenesis();
+
 		for (String seed : seeds) {
 			connect(seed);
 		}
+
+		// Pequena pausa para receber a cadeia dos seeds antes de minerar.
+		try {
+			Thread.sleep(SYNC_DELAY_MS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return;
+		}
+
+		startMining();
 
 		try {
 			server.join();
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	// Cria o bloco genesis uma unica vez. timestamp fixo e dados fixos fazem
+	// todos os nos chegarem exatamente ao mesmo hash, evitando forks na origem.
+	private void ensureGenesis() {
+		synchronized (blockChain) {
+			if (!blockChain.getBlockChain().isEmpty()) return;
+
+			Block genesis = new Block("Genesis", "0");
+			genesis.timeStamp = 0;
+			genesis.hash = genesis.calculateHash();
+			blockChain.addToChain(genesis);
+
+			if (blockChain.getLastBlock() == genesis) {
+				System.out.println("Genesis block ready: " + genesis.hash);
+			} else {
+				System.err.println("Failed to create genesis block");
+			}
+		}
+	}
+
+	// Chamado pela thread Miner: minera um bloco sobre o ultimo bloco local e
+	// adiciona na cadeia. Retorna null se o bloco nao foi aceito.
+	public Block mineBlock() {
+		synchronized (blockChain) {
+			Block last = blockChain.getLastBlock();
+			String previousHash = last == null ? "0" : last.hash;
+			int nextIndex = blockChain.getBlockChain().size() + 1;
+			String data = "Bloco " + nextIndex + " minerado por " + id;
+
+			Block block = new Block(data, previousHash);
+			blockChain.addToChain(block);
+
+			if (blockChain.getLastBlock() == block) {
+				return block;
+			}
+			return null;
+		}
+	}
+
+	public synchronized void startMining() {
+		if (miner != null) return;
+		miner = new Miner(this, id, MINING_INTERVAL_MS, MINING_JITTER_MS);
+		miner.start();
+	}
+
+	public synchronized void stopMining() {
+		if (miner != null) {
+			miner.shutdown();
+			miner = null;
 		}
 	}
 
@@ -346,6 +417,9 @@ public class PeerNode{
 	// Fluxo C: chamar depois de minerar/inserir um bloco local.
 	public void broadcastBlockchain() {
 		synchronized (blockChain) {
+			Block last = blockChain.getLastBlock();
+			System.out.println("Broadcasting blockchain (size " + blockChain.getBlockChain().size()
+					+ ", last: " + (last == null ? "none" : last.hash) + ")");
 			broadcast(new NetworkMessage(MessageType.BLOCKCHAIN_COPY, this.blockChain));
 		}
 	}

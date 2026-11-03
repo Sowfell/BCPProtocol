@@ -12,7 +12,7 @@ public class BlockChain implements Serializable {
 				+ "BlockChain current size: " + blockChain.size() + "\n");
 	}
 	
-	public void addToChain(Block block) {
+	public synchronized void addToChain(Block block) {
 	    if (block == null) {
 	        return;
 	    }
@@ -80,7 +80,8 @@ public class BlockChain implements Serializable {
 
         if (receivedChain.size() > this.blockChain.size()) {
             this.blockChain = receivedChain;
-            System.out.println("BlockChain Updated by network. New size: " + blockChain.size());
+            System.out.println("BlockChain Updated by network. New size: " + blockChain.size()
+                    + ", last: " + getLastBlock().hash);
             return ReplaceMessage.CHAINSWITCH;
         } else {
             System.out.println("Blockchain received size is less than or equal to actual Blockchain");
