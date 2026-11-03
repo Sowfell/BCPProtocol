@@ -72,7 +72,7 @@ public class BlockChain implements Serializable {
 		return true;
 	}
 	
-	public ReplaceMessage replaceChain(ArrayList<Block> receivedChain) {
+	public synchronized ReplaceMessage replaceChain(ArrayList<Block> receivedChain) {
         if (!BlockChain.isChainValid(receivedChain)) {
             System.err.println("INVALID BLOCKCHAIN RECEIVED");
             return ReplaceMessage.INVALIDCHAIN;
