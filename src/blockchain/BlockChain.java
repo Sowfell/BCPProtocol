@@ -92,9 +92,9 @@ public class BlockChain implements Serializable {
 	public static String rejectReason(ReplaceMessage result) {
         switch (result) {
             case INVALIDCHAIN:
-                return "Cadeia inválida";
+                return "Invalid Chain";
             case DONTCHANGE:
-                return "Tamanho menor que a cadeia local";
+                return "Received size is less than or equal to actual Blockchain";
             case CHAINSWITCH:
             default:
                 return null;

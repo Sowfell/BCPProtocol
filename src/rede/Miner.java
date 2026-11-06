@@ -37,7 +37,7 @@ public class Miner extends Thread {
 				
 				Block block = node.mineBlock();
 				if (block != null) {
-					System.out.println("Novo bloco minerado: #" + block.index + " (" + block.hash + ")");
+					System.out.println("New Block Mined: #" + block.index + " (" + block.hash + ")");
 					node.broadcastBlockchain();
 				}
 			} catch (InterruptedException e) {

@@ -143,7 +143,7 @@ public class PeerNode{
 			Block last = blockChain.getLastBlock();
 			String previousHash = last == null ? "0" : last.hash;
 			int nextIndex = blockChain.getBlockChain().size() + 1;
-			String data = "Bloco " + nextIndex + " minerado por " + id;
+			String data = "Block " + nextIndex + " being minered by" + id;
 
 			Block block = new Block(data, previousHash);
 			blockChain.addToChain(block);
